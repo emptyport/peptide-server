@@ -1,14 +1,20 @@
-FROM node:20
+# Use the official Node.js 20 image as a parent image
+FROM node:20-alpine
 
-# Create app directory
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
-COPY package*.json ./
+# Copy package.json and package-lock.json (or yarn.lock if present)
+COPY package*.json yarn.lock* ./
+
+# Install dependencies
 RUN npm install
 
-# Bundle app source
-COPY . .
+# Copy the rest of your app's source code from your host to your image filesystem.
+VOLUME [ "/usr/src/app" ]
 
+# Inform Docker that the container listens on port 3000 at runtime.
 EXPOSE 3000
-CMD [ "npm", "start" ]
+
+# Use CMD instead of ENTRYPOINT to allow overriding the command, facilitating hot reloading
+CMD ["npm", "run", "dev"]
