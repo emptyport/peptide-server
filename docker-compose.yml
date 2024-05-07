@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - peptide_network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - peptide_network
+
+  api:
+    build: ./api
+    container_name: peptide_api
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - peptide_network
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/
+      - REDIS_URL=redis://redis:6379
+      - CHOKIDAR_USEPOLLING=true
+      - NODE_ENV=development
+    volumes:
+      - ./api:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: always      
+
+  frontend:
+    build: ./frontend
+    container_name: peptide_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - peptide_network
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: always
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - NODE_ENV=development
+
+networks:
+  peptide_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
